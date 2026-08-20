@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: pos-inventario-backend
+    env: node
+    buildCommand: cd backen && npm install && npx prisma generate
+    startCommand: cd backen && npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pos-inventario-db
+          property: connectionString
+      - key: JWT_SECRET
+        value: clave_secreta_super_segura
+
+databases:
+  - name: pos-inventario-db
+    plan: free
