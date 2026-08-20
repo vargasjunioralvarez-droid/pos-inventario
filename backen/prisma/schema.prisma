@@ -31,7 +31,7 @@ model Producto {
   descripcion      String?
   proveedorId      Int?
   proveedor        Proveedor? @relation(fields: [proveedorId], references: [id])
-  moneda           String   @default("USD")   // "USD" o "BS"
+  moneda           String   @default("USD")
   costoUsd         Decimal  @db.Decimal(12, 2)
   costoLocal       Decimal  @db.Decimal(12, 2)
   precioVenta      Decimal  @db.Decimal(12, 2)
@@ -51,7 +51,7 @@ model Compra {
   proveedorId    Int
   proveedor      Proveedor @relation(fields: [proveedorId], references: [id])
   fecha          DateTime @default(now())
-  semana         String?  // formato: "YYYY-Www" o "YYYY-MM-DD"
+  semana         String?
   numeroFactura  String?
   total          Decimal  @db.Decimal(12, 2)
   detalles       DetalleCompra[]
@@ -85,7 +85,7 @@ model DetalleVenta {
   producto      Producto @relation(fields: [productoId], references: [id])
   cantidad      Decimal  @db.Decimal(12, 2)
   precioVenta   Decimal  @db.Decimal(12, 2)
-  costoUnitario Decimal  @db.Decimal(12, 2)  // Costo al momento de la venta
+  costoUnitario Decimal  @db.Decimal(12, 2)
 }
 
 model InventarioInicial {
@@ -100,14 +100,23 @@ model MovimientoInventario {
   id            Int      @id @default(autoincrement())
   productoId    Int
   producto      Producto @relation(fields: [productoId], references: [id])
-  tipo          String   // 'INICIAL', 'COMPRA', 'VENTA', 'AJUSTE', 'CONTEO'
-  cantidad      Decimal  @db.Decimal(12, 2)  // Positivo entrada, negativo salida
+  tipo          String
+  cantidad      Decimal  @db.Decimal(12, 2)
   costoUnitario Decimal  @db.Decimal(12, 2)
   fecha         DateTime @default(now())
   referenciaId  Int?
 }
 
 model ConteoInventario {
+  id          Int      @id @default(autoincrement())
+  fecha       DateTime @default(now())
+  fechaInicio DateTime?
+  fechaFin    DateTime?
+  semana      String?
+  usuario     String?
+  estado      String   @default("ABIERTO")
+  detalles    DetalleConteo[]
+}
 
 model DetalleConteo {
   id               Int      @id @default(autoincrement())
@@ -121,10 +130,10 @@ model DetalleConteo {
 }
 
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @unique   // será el nombre de usuario
-  password  String
-  rol       String   @default("VENDEDOR")
-  activo    Boolean  @default(true)
+  id            Int      @id @default(autoincrement())
+  nombre        String   @unique
+  password      String
+  rol           String   @default("VENDEDOR")
+  activo        Boolean  @default(true)
   fechaCreacion DateTime @default(now())
 }
