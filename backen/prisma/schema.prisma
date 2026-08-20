@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Parametro {
+  id          Int      @id @default(autoincrement())
+  tasaDolar   Decimal  @db.Decimal(12, 2)
+  monedaLocal String   @default("BS")
+}
+
+model Proveedor {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  ruc       String?
+  telefono  String?
+  email     String?
+  direccion String?
+  productos Producto[]
+  compras   Compra[]
+}
+
+model Producto {
+  id               Int      @id @default(autoincrement())
+  codigo           String   @unique
+  nombre           String
+  descripcion      String?
+  proveedorId      Int?
+  proveedor        Proveedor? @relation(fields: [proveedorId], references: [id])
+  moneda           String   @default("USD")   // "USD" o "BS"
+  costoUsd         Decimal  @db.Decimal(12, 2)
+  costoLocal       Decimal  @db.Decimal(12, 2)
+  precioVenta      Decimal  @db.Decimal(12, 2)
+  precioVentaUsd   Decimal? @db.Decimal(12, 2)
+  stockActual      Decimal  @default(0) @db.Decimal(12, 2)
+  stockMinimo      Decimal  @default(0) @db.Decimal(12, 2)
+  activo           Boolean  @default(true)
+  detalleCompras   DetalleCompra[]
+  detalleVentas    DetalleVenta[]
+  inventarioInicial InventarioInicial?
+  movimientos      MovimientoInventario[]
+  detalleConteos   DetalleConteo[]
+}
+
+model Compra {
+  id             Int      @id @default(autoincrement())
+  proveedorId    Int
+  proveedor      Proveedor @relation(fields: [proveedorId], references: [id])
+  fecha          DateTime @default(now())
+  semana         String?  // formato: "YYYY-Www" o "YYYY-MM-DD"
+  numeroFactura  String?
+  total          Decimal  @db.Decimal(12, 2)
+  detalles       DetalleCompra[]
+}
+
+model DetalleCompra {
+  id          Int      @id @default(autoincrement())
+  compraId    Int
+  compra      Compra   @relation(fields: [compraId], references: [id])
+  productoId  Int
+  producto    Producto @relation(fields: [productoId], references: [id])
+  cantidad    Decimal  @db.Decimal(12, 2)
+  costoUsd    Decimal  @db.Decimal(12, 2)
+  costoLocal  Decimal  @db.Decimal(12, 2)
+}
+
+model Venta {
+  id           Int      @id @default(autoincrement())
+  cliente      String?
+  fecha        DateTime @default(now())
+  total        Decimal  @db.Decimal(12, 2)
+  metodoPago   String?
+  detalles     DetalleVenta[]
+}
+
+model DetalleVenta {
+  id            Int      @id @default(autoincrement())
+  ventaId       Int
+  venta         Venta    @relation(fields: [ventaId], references: [id])
+  productoId    Int
+  producto      Producto @relation(fields: [productoId], references: [id])
+  cantidad      Decimal  @db.Decimal(12, 2)
+  precioVenta   Decimal  @db.Decimal(12, 2)
+  costoUnitario Decimal  @db.Decimal(12, 2)  // Costo al momento de la venta
+}
+
+model InventarioInicial {
+  productoId    Int      @id
+  producto      Producto @relation(fields: [productoId], references: [id])
+  cantidad      Decimal  @db.Decimal(12, 2)
+  costoUnitario Decimal  @db.Decimal(12, 2)
+  fecha         DateTime @default(now())
+}
+
+model MovimientoInventario {
+  id            Int      @id @default(autoincrement())
+  productoId    Int
+  producto      Producto @relation(fields: [productoId], references: [id])
+  tipo          String   // 'INICIAL', 'COMPRA', 'VENTA', 'AJUSTE', 'CONTEO'
+  cantidad      Decimal  @db.Decimal(12, 2)  // Positivo entrada, negativo salida
+  costoUnitario Decimal  @db.Decimal(12, 2)
+  fecha         DateTime @default(now())
+  referenciaId  Int?
+}
+
+model ConteoInventario {
+
+model DetalleConteo {
+  id               Int      @id @default(autoincrement())
+  conteoId         Int
+  conteo           ConteoInventario @relation(fields: [conteoId], references: [id])
+  productoId       Int
+  producto         Producto @relation(fields: [productoId], references: [id])
+  cantidadSistema  Decimal  @db.Decimal(12, 2)
+  cantidadContada  Decimal  @db.Decimal(12, 2)
+  diferencia       Decimal  @db.Decimal(12, 2)
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique   // será el nombre de usuario
+  password  String
+  rol       String   @default("VENDEDOR")
+  activo    Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
+}

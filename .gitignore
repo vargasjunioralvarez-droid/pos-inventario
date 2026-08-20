@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno
+.env
+*.env
+
+# Archivos de compilación
+dist/
+build/
+
+# Prisma
+backen/prisma/*.db
+
+# Logs
+*.log
+
+# Sistema
+Thumbs.db
+.DS_Store
