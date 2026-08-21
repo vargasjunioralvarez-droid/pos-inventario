@@ -140,7 +140,7 @@ export default function Ventas() {
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <div style={{ flex: 1, minWidth: '150px', background: '#fff', borderRadius: '10px', padding: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
           <small style={{ color: '#6b7280' }}>Dólar</small>
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{tasaDolar.toFixed(4)} Bs/USD</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{tasaDolar.toFixed(2)} Bs/USD</div>
         </div>
         <div style={{ flex: 1, minWidth: '150px', background: '#fff', borderRadius: '10px', padding: '15px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
           <small style={{ color: '#6b7280' }}>Total BS</small>
