@@ -40,7 +40,19 @@ export default function Compras() {
   useEffect(() => { cargarDatos(); }, []);
 
   const handleDetalleChange = (id, field, value) => {
-    setDetalles(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
+    setDetalles(prev => prev.map(d => {
+      if (d.id === id) {
+        const nuevo = { ...d, [field]: value };
+        if (field === 'productoId') {
+          const producto = productos.find(p => p.id === Number(value));
+          if (producto && producto.unidadesPorBulto) {
+            nuevo.unidadesPorBulto = producto.unidadesPorBulto;
+          }
+        }
+        return nuevo;
+      }
+      return d;
+    }));
   };
 
   const agregarLinea = () => {
@@ -155,10 +167,7 @@ export default function Compras() {
   );
 
   const totalPaginas = Math.ceil(comprasFiltradas.length / porPagina);
-  const comprasPaginadas = comprasFiltradas.slice(
-    (paginaActual - 1) * porPagina,
-    paginaActual * porPagina
-  );
+  const comprasPaginadas = comprasFiltradas.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
 
   return (
     <div>
@@ -268,13 +277,7 @@ export default function Compras() {
 
       <div className="card">
         <h2>Historial de Compras</h2>
-        <input
-          type="text"
-          placeholder="🔍 Buscar por proveedor o factura..."
-          value={terminoBusqueda}
-          onChange={e => setTerminoBusqueda(e.target.value)}
-          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
-        />
+        <input type="text" placeholder="🔍 Buscar por proveedor o factura..." value={terminoBusqueda} onChange={e => setTerminoBusqueda(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
         <table className="table">
           <thead>
             <tr>

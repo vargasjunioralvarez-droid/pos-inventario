@@ -8,7 +8,7 @@ export default function Productos() {
   const [form, setForm] = useState({
     codigo: '',
     descripcion: '',
-    moneda: 'USD'
+    unidadesPorBulto: ''
   });
 
   const cargar = async () => {
@@ -22,9 +22,7 @@ export default function Productos() {
 
   useEffect(() => { cargar(); }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +35,7 @@ export default function Productos() {
         alert('Producto creado');
       }
       setEditandoId(null);
-      setForm({ codigo: '', descripcion: '', moneda: 'USD' });
+      setForm({ codigo: '', descripcion: '', unidadesPorBulto: '' });
       cargar();
     } catch (error) {
       console.error('Error al guardar producto', error);
@@ -45,12 +43,12 @@ export default function Productos() {
     }
   };
 
-  const editarProducto = (producto) => {
-    setEditandoId(producto.id);
+  const editarProducto = (p) => {
+    setEditandoId(p.id);
     setForm({
-      codigo: producto.codigo,
-      descripcion: producto.descripcion || producto.nombre,
-      moneda: producto.moneda
+      codigo: p.codigo,
+      descripcion: p.descripcion || p.nombre,
+      unidadesPorBulto: p.unidadesPorBulto || ''
     });
   };
 
@@ -61,17 +59,16 @@ export default function Productos() {
       cargar();
       alert('Producto eliminado');
     } catch (error) {
-      console.error('Error al eliminar producto', error);
+      console.error('Error al eliminar', error);
       alert('Error al eliminar producto');
     }
   };
 
   const cancelarEdicion = () => {
     setEditandoId(null);
-    setForm({ codigo: '', descripcion: '', moneda: 'USD' });
+    setForm({ codigo: '', descripcion: '', unidadesPorBulto: '' });
   };
 
-  // Filtrar productos según búsqueda
   const productosFiltrados = productos.filter(p =>
     p.codigo.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
     (p.nombre || p.descripcion).toLowerCase().includes(terminoBusqueda.toLowerCase())
@@ -79,9 +76,7 @@ export default function Productos() {
 
   return (
     <div>
-      <div className="page-title">
-        <h1>📦 Productos</h1>
-      </div>
+      <div className="page-title"><h1>📦 Productos</h1></div>
 
       <div className="card">
         <h2>{editandoId ? 'Editar Producto' : 'Nuevo Producto'}</h2>
@@ -95,21 +90,12 @@ export default function Productos() {
             <input type="text" name="descripcion" value={form.descripcion} onChange={handleChange} required />
           </div>
           <div className="form-group">
-            <label>Moneda</label>
-            <select name="moneda" value={form.moneda} onChange={handleChange}>
-              <option value="USD">Dólar (USD)</option>
-              <option value="BS">Bolívares (BS)</option>
-            </select>
+            <label>Unidades por Bulto</label>
+            <input type="number" step="0.01" name="unidadesPorBulto" value={form.unidadesPorBulto} onChange={handleChange} />
           </div>
           <div className="form-group" style={{ alignSelf: 'end', display: 'flex', gap: '10px' }}>
-            <button type="submit" className="btn btn-primary">
-              {editandoId ? 'Guardar Cambios' : 'Guardar'}
-            </button>
-            {editandoId && (
-              <button type="button" className="btn btn-secondary" onClick={cancelarEdicion}>
-                Cancelar
-              </button>
-            )}
+            <button type="submit" className="btn btn-primary">{editandoId ? 'Guardar Cambios' : 'Guardar'}</button>
+            {editandoId && <button type="button" className="btn btn-secondary" onClick={cancelarEdicion}>Cancelar</button>}
           </div>
         </form>
       </div>
@@ -118,35 +104,32 @@ export default function Productos() {
         <h2>Lista de Productos</h2>
         <input
           type="text"
-          placeholder="🔍 Buscar producto por código o descripción..."
+          placeholder="🔍 Buscar producto..."
           value={terminoBusqueda}
           onChange={e => setTerminoBusqueda(e.target.value)}
           style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
         />
-        <table className="table">
+        <table className="table" style={{ tableLayout: 'fixed', width: '100%' }}>
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Descripción</th>
-              <th>Moneda</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
+              <th style={{ width: '20%' }}>Código</th>
+              <th style={{ width: '15%', textAlign: 'left', paddingLeft: '20px' }}>Descripción</th>
+              <th style={{ width: '15%', textAlign: 'center' }}>Unid. por Bulto</th>
+              <th style={{ width: '20%', textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {productosFiltrados.map(p => (
               <tr key={p.id}>
-                <td>{p.codigo}</td>
-                <td>{p.nombre || p.descripcion}</td>
-                <td>{p.moneda}</td>
+                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigo}</td>
+                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', paddingLeft: '20px' }}>{p.nombre || p.descripcion}</td>
+                <td style={{ textAlign: 'center' }}>{p.unidadesPorBulto || '-'}</td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button className="btn btn-warning" onClick={() => editarProducto(p)} style={{ marginRight: '5px' }}>Editar</button>
                   <button className="btn btn-danger" onClick={() => eliminarProducto(p.id)}>Eliminar</button>
                 </td>
               </tr>
             ))}
-            {productosFiltrados.length === 0 && (
-              <tr><td colSpan="4">No hay productos que coincidan con la búsqueda</td></tr>
-            )}
           </tbody>
         </table>
       </div>

@@ -48,6 +48,7 @@ model Producto {
   inventarioInicial InventarioInicial?
   movimientos      MovimientoInventario[]
   detalleConteos   DetalleConteo[]
+  unidadesPorBulto Decimal? @db.Decimal(12, 2)
 }
 
 model Compra {

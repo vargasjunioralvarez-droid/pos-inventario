@@ -19,7 +19,7 @@ exports.getProductos = async (req, res) => {
 };
 
 exports.createProducto = async (req, res) => {
-  const { codigo, descripcion, moneda, stockMinimo } = req.body;
+  const { codigo, descripcion, moneda, stockMinimo, unidadesPorBulto } = req.body;
 
   if (!codigo || !descripcion || !moneda) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
@@ -41,7 +41,8 @@ exports.createProducto = async (req, res) => {
         margenContado: 0,
         margenFiado: 0,
         stockActual: 0,
-        stockMinimo: stockMinimo ? Number(stockMinimo) : 0
+        stockMinimo: stockMinimo ? Number(stockMinimo) : 0,
+        unidadesPorBulto: unidadesPorBulto ? Number(unidadesPorBulto) : null
       }
     });
     res.status(201).json(producto);
@@ -53,7 +54,7 @@ exports.createProducto = async (req, res) => {
 
 exports.updateProducto = async (req, res) => {
   const { id } = req.params;
-  const { codigo, descripcion, moneda, stockMinimo } = req.body;
+  const { codigo, descripcion, moneda, stockMinimo, unidadesPorBulto } = req.body;
   const data = {};
   if (codigo !== undefined) data.codigo = codigo;
   if (descripcion !== undefined) {
@@ -62,6 +63,7 @@ exports.updateProducto = async (req, res) => {
   }
   if (moneda !== undefined) data.moneda = moneda;
   if (stockMinimo !== undefined) data.stockMinimo = Number(stockMinimo);
+  if (unidadesPorBulto !== undefined) data.unidadesPorBulto = Number(unidadesPorBulto) || null;
 
   try {
     const producto = await prisma.producto.update({
@@ -90,9 +92,7 @@ exports.deleteProducto = async (req, res) => {
 
 exports.actualizarPreciosConTasa = async (req, res) => {
   const { tasaDolar } = req.body;
-  if (!tasaDolar || tasaDolar <= 0) {
-    return res.status(400).json({ error: 'Tasa de dólar inválida' });
-  }
+  if (!tasaDolar || tasaDolar <= 0) return res.status(400).json({ error: 'Tasa inválida' });
 
   try {
     await prisma.parametro.upsert({
@@ -102,7 +102,6 @@ exports.actualizarPreciosConTasa = async (req, res) => {
     });
 
     const productos = await prisma.producto.findMany();
-
     for (const p of productos) {
       const precioUsd = Number(p.precioVentaUsd) || 0;
       if (precioUsd > 0) {
@@ -119,17 +118,15 @@ exports.actualizarPreciosConTasa = async (req, res) => {
         });
       }
     }
-
-    res.json({ message: 'Precios en BS actualizados según nueva tasa' });
+    res.json({ message: 'Precios BS actualizados' });
   } catch (error) {
-    console.error('Error en actualizarPreciosConTasa:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
 exports.actualizarPrecioProducto = async (req, res) => {
   const { id } = req.params;
-  const { precioVenta, precioVentaUsd, precioVentaFiado, precioVentaFiadoUsd, margen, margenFiado } = req.body;
+  const { margen, margenFiado, precioVenta, precioVentaUsd, precioVentaFiado, precioVentaFiadoUsd } = req.body;
 
   try {
     const producto = await prisma.producto.findUnique({ where: { id: Number(id) } });
@@ -138,7 +135,6 @@ exports.actualizarPrecioProducto = async (req, res) => {
     const tasa = await getTasaDolar();
     const data = {};
 
-    // Guardar márgenes exactos
     if (margen !== undefined) {
       data.margenContado = Number(margen);
       const costoUsd = Number(producto.costoUsd) || 0;
@@ -154,7 +150,6 @@ exports.actualizarPrecioProducto = async (req, res) => {
       data.precioVentaFiado = precioFiadoUsd * tasa;
     }
 
-    // Si no vinieron márgenes, usar precios directos
     if (margen === undefined) {
       if (precioVenta !== undefined && precioVentaUsd !== undefined) {
         data.precioVenta = Number(precioVenta);
@@ -185,10 +180,8 @@ exports.actualizarPrecioProducto = async (req, res) => {
       where: { id: Number(id) },
       data
     });
-
     res.json(actualizado);
   } catch (error) {
-    console.error('Error en actualizarPrecioProducto:', error);
     res.status(500).json({ error: error.message });
   }
 };
