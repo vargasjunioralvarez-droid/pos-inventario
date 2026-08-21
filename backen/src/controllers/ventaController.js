@@ -3,8 +3,7 @@ const prisma = new PrismaClient();
 
 // Crear una venta con detalles y actualizar stock
 exports.crearVenta = async (req, res) => {
-  const { cliente, metodoPago, detalles } = req.body;
-  // detalles: [{ productoId, cantidad, precioVenta }]
+  const { cliente, metodoPago, detalles, pagado } = req.body;
 
   if (!detalles || !detalles.length) {
     return res.status(400).json({ error: 'Debe incluir al menos un detalle de venta' });
@@ -26,12 +25,6 @@ exports.crearVenta = async (req, res) => {
 
         const cantidad = Number(detalle.cantidad);
         const precioVenta = Number(detalle.precioVenta);
-
-        // Permitir venta sin stock (quitar validación)
-        // Si quieres restringir, descomenta esta línea:
-        // if (Number(producto.stockActual) < cantidad) {
-        //   throw new Error(`Stock insuficiente para ${producto.nombre}. Disponible: ${Number(producto.stockActual)}`);
-        // }
 
         const costoUnitario = Number(producto.costoLocal);
         const subtotal = cantidad * precioVenta;
@@ -65,6 +58,7 @@ exports.crearVenta = async (req, res) => {
           cliente: cliente || '',
           metodoPago: metodoPago || 'EFECTIVO',
           total,
+          pagado: pagado !== undefined ? pagado : (metodoPago === 'CONTADO'),
           detalles: { create: detallesVenta }
         },
         include: { detalles: true }
@@ -80,13 +74,11 @@ exports.crearVenta = async (req, res) => {
   }
 };
 
-// Obtener todas las ventas (con detalles)
+// Obtener todas las ventas
 exports.getVentas = async (req, res) => {
   try {
     const ventas = await prisma.venta.findMany({
-      include: {
-        detalles: { include: { producto: true } }
-      },
+      include: { detalles: { include: { producto: true } } },
       orderBy: { fecha: 'desc' }
     });
     res.json(ventas);
@@ -95,11 +87,11 @@ exports.getVentas = async (req, res) => {
   }
 };
 
-// Obtener ventas filtradas por fecha y método de pago (para reportes)
+// Obtener ventas filtradas por fecha, método y estado de pago
 exports.getVentasPorMetodo = async (req, res) => {
-  const { fechaInicio, fechaFin, metodoPago } = req.query;
-
+  const { fechaInicio, fechaFin, metodoPago, pagado } = req.query;
   const filtro = {};
+
   if (fechaInicio && fechaFin) {
     filtro.fecha = {
       gte: new Date(fechaInicio + 'T00:00:00'),
@@ -108,6 +100,9 @@ exports.getVentasPorMetodo = async (req, res) => {
   }
   if (metodoPago) {
     filtro.metodoPago = metodoPago;
+  }
+  if (pagado !== undefined && pagado !== '') {
+    filtro.pagado = pagado === 'true';
   }
 
   try {
@@ -119,6 +114,23 @@ exports.getVentasPorMetodo = async (req, res) => {
     res.json(ventas);
   } catch (error) {
     console.error('Error en getVentasPorMetodo:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Actualizar estado de pago de una venta
+exports.updatePagoVenta = async (req, res) => {
+  const { id } = req.params;
+  const { pagado } = req.body;
+
+  try {
+    const venta = await prisma.venta.update({
+      where: { id: Number(id) },
+      data: { pagado: pagado === true }
+    });
+    res.json(venta);
+  } catch (error) {
+    console.error('Error en updatePagoVenta:', error);
     res.status(500).json({ error: error.message });
   }
 };
