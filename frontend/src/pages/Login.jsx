@@ -13,7 +13,12 @@ export default function Login() {
       const res = await api.post('/auth/login', { nombre, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('usuario', JSON.stringify(res.data.usuario));
-      window.location.href = '/';
+
+      if (res.data.usuario.rol === 'VENDEDOR') {
+        window.location.href = '/ventas';
+      } else {
+        window.location.href = '/';
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     }

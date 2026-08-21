@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Registro from './pages/Registro';
 import ReporteVentas from './pages/ReporteVentas';
 import ReporteCompras from './pages/ReporteCompras';
+import Inicio from './pages/Inicio';
 
 function RutaProtegida({ children, soloAdmin = false }) {
   const token = localStorage.getItem('token');
@@ -42,9 +43,9 @@ function App() {
               <Link to="/cambio-precio">Cambio Precio</Link>
               <Link to="/reportes">Reportes</Link>
               <Link to="/reporte-ventas">Reporte Ventas</Link>
+              <Link to="/reporte-compras">Reporte Compras</Link>
               <Link to="/parametros">Parámetros</Link>
               <Link to="/registro">Usuarios</Link>
-              <Link to="/reporte-compras">Reporte Compras</Link>
             </>
           ) : (
             <>
@@ -63,18 +64,19 @@ function App() {
       <div className="container">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<RutaProtegida><Ventas /></RutaProtegida>} />
+          <Route path="/" element={<RutaProtegida><Navigate to={usuario.rol === 'VENDEDOR' ? '/ventas' : '/inicio'} replace /></RutaProtegida>} />
+          <Route path="/inicio" element={<RutaProtegida><Inicio /></RutaProtegida>} />
+          <Route path="/ventas" element={<RutaProtegida><Ventas /></RutaProtegida>} />
           <Route path="/productos" element={<RutaProtegida soloAdmin><Productos /></RutaProtegida>} />
           <Route path="/proveedores" element={<RutaProtegida soloAdmin><Proveedores /></RutaProtegida>} />
           <Route path="/compras" element={<RutaProtegida soloAdmin><Compras /></RutaProtegida>} />
-          <Route path="/ventas" element={<RutaProtegida><Ventas /></RutaProtegida>} />
           <Route path="/toma-inventario" element={<RutaProtegida soloAdmin><TomaInventario /></RutaProtegida>} />
           <Route path="/cambio-precio" element={<RutaProtegida soloAdmin><CambioPrecio /></RutaProtegida>} />
           <Route path="/reportes" element={<RutaProtegida soloAdmin><Reportes /></RutaProtegida>} />
           <Route path="/reporte-ventas" element={<RutaProtegida soloAdmin><ReporteVentas /></RutaProtegida>} />
+          <Route path="/reporte-compras" element={<RutaProtegida soloAdmin><ReporteCompras /></RutaProtegida>} />
           <Route path="/parametros" element={<RutaProtegida soloAdmin><Parametros /></RutaProtegida>} />
           <Route path="/registro" element={<RutaProtegida soloAdmin><Registro /></RutaProtegida>} />
-          <Route path="/reporte-compras" element={<RutaProtegida soloAdmin><ReporteCompras /></RutaProtegida>} />
         </Routes>
       </div>
     </BrowserRouter>
