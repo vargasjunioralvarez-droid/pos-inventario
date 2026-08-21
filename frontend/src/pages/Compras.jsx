@@ -18,6 +18,7 @@ export default function Compras() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
   const [modalDetalles, setModalDetalles] = useState(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
 
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
@@ -148,8 +149,16 @@ export default function Compras() {
     }
   };
 
-  const totalPaginas = Math.ceil(compras.length / porPagina);
-  const comprasPaginadas = compras.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
+  const comprasFiltradas = compras.filter(c =>
+    (c.proveedor?.nombre || '').toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+    (c.numeroFactura || '').toLowerCase().includes(terminoBusqueda.toLowerCase())
+  );
+
+  const totalPaginas = Math.ceil(comprasFiltradas.length / porPagina);
+  const comprasPaginadas = comprasFiltradas.slice(
+    (paginaActual - 1) * porPagina,
+    paginaActual * porPagina
+  );
 
   return (
     <div>
@@ -189,16 +198,14 @@ export default function Compras() {
 
           <h3>Detalles</h3>
           <div style={{ overflowX: 'auto', marginBottom: '15px' }}>
-            <table className="table" style={{ minWidth: '1300px' }}>
+            <table className="table" style={{ minWidth: '1200px' }}>
               <thead>
                 <tr>
                   <th>Producto</th>
                   <th>Cant. Bultos</th>
                   <th>Unid. por Bulto</th>
-                  <th>Total Unid.</th>
+                  <th>Total Unidades</th>
                   <th>Costo Bulto BS</th>
-                  <th>Costo Bulto USD</th>
-                  <th>Total Bulto BS</th>
                   <th>Costo Unit. BS</th>
                   <th>Costo Unit. USD</th>
                   <th>Acción</th>
@@ -206,14 +213,10 @@ export default function Compras() {
               </thead>
               <tbody>
                 {detalles.map(d => {
-                  const cantidadBultos = Number(d.cantidadBultos) || 0;
-                  const unidadesPorBulto = Number(d.unidadesPorBulto) || 0;
-                  const totalUnidades = cantidadBultos * unidadesPorBulto;
+                  const totalUnidades = (Number(d.cantidadBultos) || 0) * (Number(d.unidadesPorBulto) || 0);
                   const costoBultoBs = Number(d.costoBultoBs) || 0;
-                  const costoBultoUsd = tasaDolar > 0 ? costoBultoBs / tasaDolar : 0;
-                  const totalBultoBs = cantidadBultos * costoBultoBs;
-                  const costoUnitarioBs = totalUnidades > 0 ? costoBultoBs / unidadesPorBulto : 0;
-                  const costoUnitarioUsd = totalUnidades > 0 ? costoUnitarioBs / tasaDolar : 0;
+                  const costoUnitarioBs = totalUnidades > 0 ? costoBultoBs / totalUnidades : 0;
+                  const costoUnitarioUsd = tasaDolar > 0 ? costoUnitarioBs / tasaDolar : 0;
                   return (
                     <tr key={d.id}>
                       <td>
@@ -227,8 +230,6 @@ export default function Compras() {
                       <td><input type="text" inputMode="decimal" value={d.unidadesPorBulto} onChange={e => handleDetalleChange(d.id, 'unidadesPorBulto', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const inputs = e.target.closest('tr').querySelectorAll('input'); if (inputs[2]) inputs[2].focus(); } }} placeholder="0" style={{ width: '100px' }} /></td>
                       <td><input type="text" value={totalUnidades} readOnly style={{ width: '100px' }} /></td>
                       <td><input type="text" inputMode="decimal" value={d.costoBultoBs} onChange={e => handleDetalleChange(d.id, 'costoBultoBs', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const btnEliminar = e.target.closest('tr').querySelector('button'); if (btnEliminar) btnEliminar.focus(); } }} placeholder="0.00" style={{ width: '120px' }} /></td>
-                      <td><input type="text" value={costoBultoUsd.toFixed(2)} readOnly style={{ width: '120px' }} /></td>
-                      <td><input type="text" value={totalBultoBs.toFixed(2)} readOnly style={{ width: '120px' }} /></td>
                       <td><input type="text" value={costoUnitarioBs.toFixed(2)} readOnly style={{ width: '120px' }} /></td>
                       <td><input type="text" value={costoUnitarioUsd.toFixed(2)} readOnly style={{ width: '120px' }} /></td>
                       <td><button type="button" className="btn btn-danger" onClick={() => eliminarLinea(d.id)} disabled={detalles.length === 1}>✕</button></td>
@@ -267,6 +268,13 @@ export default function Compras() {
 
       <div className="card">
         <h2>Historial de Compras</h2>
+        <input
+          type="text"
+          placeholder="🔍 Buscar por proveedor o factura..."
+          value={terminoBusqueda}
+          onChange={e => setTerminoBusqueda(e.target.value)}
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
+        />
         <table className="table">
           <thead>
             <tr>

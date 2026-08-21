@@ -26,13 +26,26 @@ export default function ReporteVentas() {
     consultar();
   }, []);
 
-  // Filtrar por nombre de cliente
   const ventasFiltradas = ventas.filter(v =>
     (v.cliente || '').toLowerCase().includes(terminoBusqueda.toLowerCase())
   );
 
   const totalBs = ventasFiltradas.reduce((s, v) => s + Number(v.total), 0);
   const totalUsd = tasaDolar > 0 ? totalBs / tasaDolar : 0;
+
+  const marcarPagado = async (id, pagado) => {
+    try {
+      await api.put(`/ventas/${id}/pago`, { pagado });
+      consultar();
+    } catch (error) {
+      console.error('Error al actualizar pago', error);
+    }
+  };
+
+  const estadoTexto = (v) => {
+    if (v.metodoPago === 'CONTADO') return 'Pagado';
+    return v.pagado ? 'Pagado' : 'Pendiente';
+  };
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '20px' }}>
@@ -64,14 +77,11 @@ export default function ReporteVentas() {
 
       <div className="card">
         <h2>Resumen</h2>
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <div><strong>Total BS:</strong> {totalBs.toFixed(2)}</div>
-          <div><strong>Total USD:</strong> ${totalUsd.toFixed(2)}</div>
-        </div>
+        <div><strong>Total BS:</strong> {totalBs.toFixed(2)}</div>
+        <div><strong>Total USD:</strong> ${totalUsd.toFixed(2)}</div>
       </div>
 
       <div className="card">
-        <h2>Ventas</h2>
         <table className="table">
           <thead>
             <tr>
@@ -81,6 +91,8 @@ export default function ReporteVentas() {
               <th>Método</th>
               <th>Total BS</th>
               <th>Total USD</th>
+              <th>Estado</th>
+              <th>Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -92,10 +104,27 @@ export default function ReporteVentas() {
                 <td>{v.metodoPago}</td>
                 <td>{Number(v.total).toFixed(2)}</td>
                 <td>${(Number(v.total) / tasaDolar).toFixed(2)}</td>
+                <td>{estadoTexto(v)}</td>
+                <td>
+                  {v.metodoPago === 'FIADO' ? (
+                    <button
+                      className="btn"
+                      style={{
+                        background: v.pagado ? '#10b981' : '#f59e0b',
+                        color: 'white'
+                      }}
+                      onClick={() => marcarPagado(v.id, !v.pagado)}
+                    >
+                      {v.pagado ? 'Pagado' : 'Marcar Pagado'}
+                    </button>
+                  ) : (
+                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>Pagado</span>
+                  )}
+                </td>
               </tr>
             ))}
             {ventasFiltradas.length === 0 && (
-              <tr><td colSpan="6">No hay ventas para el filtro seleccionado</td></tr>
+              <tr><td colSpan="8">No hay ventas para el filtro</td></tr>
             )}
           </tbody>
         </table>

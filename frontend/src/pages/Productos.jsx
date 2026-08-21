@@ -3,7 +3,8 @@ import api from '../services/api';
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
-  const [editandoId, setEditandoId] = useState(null); // estado para edición
+  const [editandoId, setEditandoId] = useState(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [form, setForm] = useState({
     codigo: '',
     descripcion: '',
@@ -29,11 +30,9 @@ export default function Productos() {
     e.preventDefault();
     try {
       if (editandoId) {
-        // Actualizar producto existente
         await api.put(`/productos/${editandoId}`, form);
         alert('Producto actualizado');
       } else {
-        // Crear nuevo producto
         await api.post('/productos', form);
         alert('Producto creado');
       }
@@ -55,11 +54,6 @@ export default function Productos() {
     });
   };
 
-  const cancelarEdicion = () => {
-    setEditandoId(null);
-    setForm({ codigo: '', descripcion: '', moneda: 'USD' });
-  };
-
   const eliminarProducto = async (id) => {
     if (!window.confirm('¿Eliminar este producto?')) return;
     try {
@@ -71,6 +65,17 @@ export default function Productos() {
       alert('Error al eliminar producto');
     }
   };
+
+  const cancelarEdicion = () => {
+    setEditandoId(null);
+    setForm({ codigo: '', descripcion: '', moneda: 'USD' });
+  };
+
+  // Filtrar productos según búsqueda
+  const productosFiltrados = productos.filter(p =>
+    p.codigo.toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+    (p.nombre || p.descripcion).toLowerCase().includes(terminoBusqueda.toLowerCase())
+  );
 
   return (
     <div>
@@ -98,7 +103,7 @@ export default function Productos() {
           </div>
           <div className="form-group" style={{ alignSelf: 'end', display: 'flex', gap: '10px' }}>
             <button type="submit" className="btn btn-primary">
-              {editandoId ? 'Guardar Edición' : 'Guardar'}
+              {editandoId ? 'Guardar Cambios' : 'Guardar'}
             </button>
             {editandoId && (
               <button type="button" className="btn btn-secondary" onClick={cancelarEdicion}>
@@ -111,27 +116,37 @@ export default function Productos() {
 
       <div className="card">
         <h2>Lista de Productos</h2>
-        <table className="table" style={{ tableLayout: 'fixed', width: '100%' }}>
+        <input
+          type="text"
+          placeholder="🔍 Buscar producto por código o descripción..."
+          value={terminoBusqueda}
+          onChange={e => setTerminoBusqueda(e.target.value)}
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
+        />
+        <table className="table">
           <thead>
             <tr>
-              <th style={{ width: '15%' }}>Código</th>
-              <th style={{ width: '50%', textAlign: 'left', paddingLeft: '250px' }}>Descripción</th>
-              <th style={{ width: '15%', textAlign: 'center' }}>Moneda</th>
-              <th style={{ width: '20%', textAlign: 'right' }}>Acciones</th>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Moneda</th>
+              <th style={{ textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {productos.map(p => (
+            {productosFiltrados.map(p => (
               <tr key={p.id}>
-                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigo}</td>
-                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', paddingLeft: '250px' }}>{p.nombre || p.descripcion}</td>
-                <td style={{ textAlign: 'center' }}>{p.moneda}</td>
+                <td>{p.codigo}</td>
+                <td>{p.nombre || p.descripcion}</td>
+                <td>{p.moneda}</td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button className="btn btn-warning" onClick={() => editarProducto(p)} style={{ marginRight: '5px' }}>Editar</button>
                   <button className="btn btn-danger" onClick={() => eliminarProducto(p.id)}>Eliminar</button>
                 </td>
               </tr>
             ))}
+            {productosFiltrados.length === 0 && (
+              <tr><td colSpan="4">No hay productos que coincidan con la búsqueda</td></tr>
+            )}
           </tbody>
         </table>
       </div>

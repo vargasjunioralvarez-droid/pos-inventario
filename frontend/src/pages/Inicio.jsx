@@ -29,50 +29,69 @@ export default function Inicio() {
 
   const maxValor = Math.max(totales.productos, totales.ventas, totales.compras, totales.proveedores, 1);
 
+  const tarjetas = [
+    { label: 'Productos', valor: totales.productos, color: '#667eea', icono: '📦' },
+    { label: 'Ventas', valor: totales.ventas, color: '#10b981', icono: '💰' },
+    { label: 'Compras', valor: totales.compras, color: '#ef4444', icono: '🛒' },
+    { label: 'Proveedores', valor: totales.proveedores, color: '#f59e0b', icono: '🏢' },
+  ];
+
   return (
     <div>
-      <div className="page-title" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-        <h1>🏪 Bienvenido al Sistema Mi Bodega</h1>
+      <div className="page-title" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', borderRadius: '12px', padding: '25px' }}>
+        <h1 style={{ margin: 0, fontSize: '2rem' }}>🏪 Bienvenido al Sistema Mi Bodega</h1>
+        <p style={{ marginTop: '8px', opacity: '0.9' }}>Resumen general de tu negocio</p>
       </div>
 
       <div className="card">
-        <h2>Resumen General</h2>
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '150px', background: '#f0f4ff', padding: '15px', borderRadius: '10px' }}>
-            <small>Productos</small>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totales.productos}</div>
-          </div>
-          <div style={{ flex: 1, minWidth: '150px', background: '#e6f7e6', padding: '15px', borderRadius: '10px' }}>
-            <small>Ventas</small>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totales.ventas}</div>
-          </div>
-          <div style={{ flex: 1, minWidth: '150px', background: '#fdeaea', padding: '15px', borderRadius: '10px' }}>
-            <small>Compras</small>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totales.compras}</div>
-          </div>
-          <div style={{ flex: 1, minWidth: '150px', background: '#fff8e1', padding: '15px', borderRadius: '10px' }}>
-            <small>Proveedores</small>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{totales.proveedores}</div>
-          </div>
+        <h2 style={{ marginBottom: '20px' }}>Resumen General</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          {tarjetas.map(item => (
+            <div
+              key={item.label}
+              style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: 'default'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <div style={{ fontSize: '2.5rem' }}>{item.icono}</div>
+              <div>
+                <small style={{ color: '#6b7280' }}>{item.label}</small>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: item.color }}>{item.valor}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="card">
-        <h2>Gráfico simple</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[
-            { label: 'Productos', valor: totales.productos, color: '#667eea' },
-            { label: 'Ventas', valor: totales.ventas, color: '#10b981' },
-            { label: 'Compras', valor: totales.compras, color: '#ef4444' },
-            { label: 'Proveedores', valor: totales.proveedores, color: '#f59e0b' },
-          ].map(item => (
+        <h2 style={{ marginBottom: '20px' }}>Gráfico de Resumen</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {tarjetas.map(item => (
             <div key={item.label}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                <span>{item.label}</span>
-                <span>{item.valor}</span>
+                <span style={{ fontWeight: '500' }}>{item.label}</span>
+                <span style={{ fontWeight: 'bold', color: item.color }}>{item.valor}</span>
               </div>
-              <div style={{ background: '#e5e7eb', borderRadius: '10px', height: '20px', overflow: 'hidden' }}>
-                <div style={{ width: `${(item.valor / maxValor) * 100}%`, background: item.color, height: '100%', borderRadius: '10px', transition: 'width 0.5s' }}></div>
+              <div style={{ background: '#e5e7eb', borderRadius: '10px', height: '25px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${(item.valor / maxValor) * 100}%`,
+                    background: `linear-gradient(90deg, ${item.color}, ${item.color}cc)`,
+                    height: '100%',
+                    borderRadius: '10px',
+                    transition: 'width 1s ease'
+                  }}
+                ></div>
               </div>
             </div>
           ))}

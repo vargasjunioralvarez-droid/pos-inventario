@@ -4,6 +4,7 @@ import api from '../services/api';
 export default function Proveedores() {
   const [proveedores, setProveedores] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [form, setForm] = useState({
     nombre: '',
     ruc: '',
@@ -74,6 +75,12 @@ export default function Proveedores() {
     setForm({ nombre: '', ruc: '', telefono: '', email: '', direccion: '' });
   };
 
+  const proveedoresFiltrados = proveedores.filter(p =>
+    (p.nombre || '').toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+    (p.ruc || '').toLowerCase().includes(terminoBusqueda.toLowerCase()) ||
+    (p.email || '').toLowerCase().includes(terminoBusqueda.toLowerCase())
+  );
+
   return (
     <div>
       <div className="page-title">
@@ -103,12 +110,12 @@ export default function Proveedores() {
             <label>Dirección</label>
             <input type="text" name="direccion" value={form.direccion} onChange={handleChange} />
           </div>
-          <div className="form-group" style={{ alignSelf: 'end' }}>
+          <div className="form-group" style={{ alignSelf: 'end', display: 'flex', gap: '10px' }}>
             <button type="submit" className="btn btn-primary">
               {editandoId ? 'Guardar Cambios' : 'Guardar'}
             </button>
             {editandoId && (
-              <button type="button" className="btn btn-secondary" onClick={cancelarEdicion} style={{ marginLeft: '10px' }}>
+              <button type="button" className="btn btn-secondary" onClick={cancelarEdicion}>
                 Cancelar
               </button>
             )}
@@ -118,6 +125,13 @@ export default function Proveedores() {
 
       <div className="card">
         <h2>Lista de Proveedores</h2>
+        <input
+          type="text"
+          placeholder="🔍 Buscar proveedor..."
+          value={terminoBusqueda}
+          onChange={e => setTerminoBusqueda(e.target.value)}
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
+        />
         <table className="table">
           <thead>
             <tr>
@@ -125,24 +139,27 @@ export default function Proveedores() {
               <th>RIF</th>
               <th>Teléfono</th>
               <th>Email</th>
-              <th style={{ textAlign: 'right' }}>Dirección</th>
+              <th>Dirección</th>
               <th style={{ textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {proveedores.map(p => (
+            {proveedoresFiltrados.map(p => (
               <tr key={p.id}>
                 <td>{p.nombre}</td>
                 <td>{p.ruc || '-'}</td>
                 <td>{p.telefono || '-'}</td>
                 <td>{p.email || '-'}</td>
-                <td style={{ textAlign: 'right' }}>{p.direccion || '-'}</td>
+                <td>{p.direccion || '-'}</td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button className="btn btn-warning" onClick={() => editarProveedor(p)} style={{ marginRight: '5px' }}>Editar</button>
                   <button className="btn btn-danger" onClick={() => eliminarProveedor(p.id)}>Eliminar</button>
                 </td>
               </tr>
             ))}
+            {proveedoresFiltrados.length === 0 && (
+              <tr><td colSpan="6">No hay proveedores que coincidan con la búsqueda</td></tr>
+            )}
           </tbody>
         </table>
       </div>
