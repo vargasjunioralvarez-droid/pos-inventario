@@ -6,5 +6,6 @@ router.get('/', compraController.getCompras);
 router.post('/', compraController.crearCompra);
 router.put('/:id', compraController.updateCompra);
 router.delete('/:id', compraController.deleteCompra);
+router.get('/reporte', compraController.getComprasPorFiltro);
 
 module.exports = router;

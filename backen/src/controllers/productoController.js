@@ -1,13 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Obtener tasa actual del dólar
 async function getTasaDolar() {
   const parametro = await prisma.parametro.findUnique({ where: { id: 1 } });
   return parametro ? Number(parametro.tasaDolar) : 1;
 }
 
-// Listar productos activos
 exports.getProductos = async (req, res) => {
   try {
     const productos = await prisma.producto.findMany({
@@ -20,12 +18,11 @@ exports.getProductos = async (req, res) => {
   }
 };
 
-// Crear producto simplificado (solo código, descripción y moneda)
 exports.createProducto = async (req, res) => {
   const { codigo, descripcion, moneda, stockMinimo } = req.body;
 
   if (!codigo || !descripcion || !moneda) {
-    return res.status(400).json({ error: 'Faltan campos obligatorios: código, descripción y moneda' });
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
   try {
@@ -39,6 +36,10 @@ exports.createProducto = async (req, res) => {
         costoLocal: 0,
         precioVenta: 0,
         precioVentaUsd: 0,
+        precioVentaFiado: 0,
+        precioVentaFiadoUsd: 0,
+        margenContado: 0,
+        margenFiado: 0,
         stockActual: 0,
         stockMinimo: stockMinimo ? Number(stockMinimo) : 0
       }
@@ -50,31 +51,30 @@ exports.createProducto = async (req, res) => {
   }
 };
 
-// Actualizar producto (solo datos básicos)
 exports.updateProducto = async (req, res) => {
   const { id } = req.params;
-  try {
-    const { codigo, descripcion, moneda, stockMinimo } = req.body;
-    const data = {};
-    if (codigo !== undefined) data.codigo = codigo;
-    if (descripcion !== undefined) {
-      data.descripcion = descripcion;
-      data.nombre = descripcion;
-    }
-    if (moneda !== undefined) data.moneda = moneda;
-    if (stockMinimo !== undefined) data.stockMinimo = Number(stockMinimo);
+  const { codigo, descripcion, moneda, stockMinimo } = req.body;
+  const data = {};
+  if (codigo !== undefined) data.codigo = codigo;
+  if (descripcion !== undefined) {
+    data.descripcion = descripcion;
+    data.nombre = descripcion;
+  }
+  if (moneda !== undefined) data.moneda = moneda;
+  if (stockMinimo !== undefined) data.stockMinimo = Number(stockMinimo);
 
+  try {
     const producto = await prisma.producto.update({
       where: { id: Number(id) },
       data
     });
     res.json(producto);
   } catch (error) {
+    console.error('Error en updateProducto:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Eliminar producto (soft delete)
 exports.deleteProducto = async (req, res) => {
   const { id } = req.params;
   try {
@@ -88,7 +88,6 @@ exports.deleteProducto = async (req, res) => {
   }
 };
 
-// Actualizar precios según nueva tasa de dólar
 exports.actualizarPreciosConTasa = async (req, res) => {
   const { tasaDolar } = req.body;
   if (!tasaDolar || tasaDolar <= 0) {
@@ -102,65 +101,89 @@ exports.actualizarPreciosConTasa = async (req, res) => {
       create: { id: 1, tasaDolar: Number(tasaDolar) }
     });
 
-    const productosUSD = await prisma.producto.findMany({
-      where: { moneda: 'USD' }
-    });
+    const productos = await prisma.producto.findMany();
 
-    for (const p of productosUSD) {
-      await prisma.producto.update({
-        where: { id: p.id },
-        data: {
-          costoLocal: Number(p.costoUsd) * Number(tasaDolar),
-          precioVenta: Number(p.precioVentaUsd || 0) * Number(tasaDolar)
-        }
-      });
+    for (const p of productos) {
+      const precioUsd = Number(p.precioVentaUsd) || 0;
+      if (precioUsd > 0) {
+        await prisma.producto.update({
+          where: { id: p.id },
+          data: { precioVenta: precioUsd * Number(tasaDolar) }
+        });
+      }
+      const precioFiadoUsd = Number(p.precioVentaFiadoUsd) || 0;
+      if (precioFiadoUsd > 0) {
+        await prisma.producto.update({
+          where: { id: p.id },
+          data: { precioVentaFiado: precioFiadoUsd * Number(tasaDolar) }
+        });
+      }
     }
 
-    res.json({ message: 'Precios actualizados según nueva tasa' });
+    res.json({ message: 'Precios en BS actualizados según nueva tasa' });
   } catch (error) {
+    console.error('Error en actualizarPreciosConTasa:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Actualizar precio de un producto (precio o margen)
 exports.actualizarPrecioProducto = async (req, res) => {
   const { id } = req.params;
-  const { precioVenta, precioVentaUsd, margen } = req.body;
+  const { precioVenta, precioVentaUsd, precioVentaFiado, precioVentaFiadoUsd, margen, margenFiado } = req.body;
 
   try {
     const producto = await prisma.producto.findUnique({ where: { id: Number(id) } });
     if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const tasa = await getTasaDolar();
-    let nuevoPrecioLocal = Number(producto.precioVenta);
-    let nuevoPrecioUsd = Number(producto.precioVentaUsd || 0);
+    const data = {};
 
-    // 1. Si viene precioVenta (BS), usarlo directamente
-    if (precioVenta !== undefined) {
-      nuevoPrecioLocal = Number(precioVenta);
-      nuevoPrecioUsd = nuevoPrecioLocal / tasa;
+    // Guardar márgenes exactos
+    if (margen !== undefined) {
+      data.margenContado = Number(margen);
+      const costoUsd = Number(producto.costoUsd) || 0;
+      const precioUsd = costoUsd * (1 + Number(margen) / 100);
+      data.precioVentaUsd = precioUsd;
+      data.precioVenta = precioUsd * tasa;
     }
-    // 2. Si viene precioVentaUsd, usarlo
-    else if (precioVentaUsd !== undefined) {
-      nuevoPrecioUsd = Number(precioVentaUsd);
-      nuevoPrecioLocal = nuevoPrecioUsd * tasa;
+    if (margenFiado !== undefined) {
+      data.margenFiado = Number(margenFiado);
+      const costoUsd = Number(producto.costoUsd) || 0;
+      const precioFiadoUsd = costoUsd * (1 + Number(margenFiado) / 100);
+      data.precioVentaFiadoUsd = precioFiadoUsd;
+      data.precioVentaFiado = precioFiadoUsd * tasa;
     }
-    // 3. Si solo viene margen, calcular con costo (si costo 0, no hacer nada)
-    else if (margen !== undefined) {
-      const m = Number(margen);
-      const costo = Number(producto.costoLocal) || 0;
-      if (costo > 0) {
-        nuevoPrecioLocal = costo * (1 + m / 100);
-        nuevoPrecioUsd = nuevoPrecioLocal / tasa;
+
+    // Si no vinieron márgenes, usar precios directos
+    if (margen === undefined) {
+      if (precioVenta !== undefined && precioVentaUsd !== undefined) {
+        data.precioVenta = Number(precioVenta);
+        data.precioVentaUsd = Number(precioVentaUsd);
+      } else if (precioVentaUsd !== undefined) {
+        data.precioVentaUsd = Number(precioVentaUsd);
+        data.precioVenta = Number(precioVentaUsd) * tasa;
+      } else if (precioVenta !== undefined) {
+        data.precioVenta = Number(precioVenta);
+        data.precioVentaUsd = Number(precioVenta) / tasa;
+      }
+    }
+
+    if (margenFiado === undefined) {
+      if (precioVentaFiado !== undefined && precioVentaFiadoUsd !== undefined) {
+        data.precioVentaFiado = Number(precioVentaFiado);
+        data.precioVentaFiadoUsd = Number(precioVentaFiadoUsd);
+      } else if (precioVentaFiadoUsd !== undefined) {
+        data.precioVentaFiadoUsd = Number(precioVentaFiadoUsd);
+        data.precioVentaFiado = Number(precioVentaFiadoUsd) * tasa;
+      } else if (precioVentaFiado !== undefined) {
+        data.precioVentaFiado = Number(precioVentaFiado);
+        data.precioVentaFiadoUsd = Number(precioVentaFiado) / tasa;
       }
     }
 
     const actualizado = await prisma.producto.update({
       where: { id: Number(id) },
-      data: {
-        precioVenta: nuevoPrecioLocal,
-        precioVentaUsd: nuevoPrecioUsd
-      }
+      data
     });
 
     res.json(actualizado);

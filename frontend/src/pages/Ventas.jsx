@@ -62,9 +62,18 @@ export default function Ventas() {
         d.productoId === producto.id ? { ...d, cantidad: d.cantidad + 1 } : d
       ));
     } else {
-      const precioVenta = producto.moneda === 'USD'
-        ? Number(producto.precioVentaUsd) * tasaDolar
-        : Number(producto.precioVenta);
+      // Seleccionar precio según tipo de pago
+      let precioVenta;
+      if (tipoPago === 'FIADO') {
+        precioVenta = producto.moneda === 'USD'
+          ? Number(producto.precioVentaFiadoUsd) * tasaDolar
+          : Number(producto.precioVentaFiado);
+      } else {
+        precioVenta = producto.moneda === 'USD'
+          ? Number(producto.precioVentaUsd) * tasaDolar
+          : Number(producto.precioVenta);
+      }
+
       setDetalles([...detalles, {
         productoId: producto.id,
         codigo: producto.codigo,
@@ -218,7 +227,9 @@ export default function Ventas() {
               >
                 <span>{p.codigo} - {p.nombre || p.descripcion}</span>
                 <span style={{ fontWeight: 'bold' }}>
-                  {p.moneda === 'USD' ? `$${Number(p.precioVentaUsd).toFixed(2)}` : `Bs ${Number(p.precioVenta).toFixed(2)}`}
+                  {tipoPago === 'FIADO'
+                    ? (p.moneda === 'USD' ? `$${Number(p.precioVentaFiadoUsd).toFixed(2)}` : `Bs ${Number(p.precioVentaFiado).toFixed(2)}`)
+                    : (p.moneda === 'USD' ? `$${Number(p.precioVentaUsd).toFixed(2)}` : `Bs ${Number(p.precioVenta).toFixed(2)}`)}
                 </span>
               </div>
             ))}

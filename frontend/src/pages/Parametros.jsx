@@ -24,7 +24,9 @@ export default function Parametros() {
     e.preventDefault();
     try {
       await api.post('/parametros', { tasaDolar: Number(tasaDolar), monedaLocal });
-      setMensaje('Parámetro actualizado');
+      // Actualizar precios en BS según nueva tasa (USD fijo)
+      await api.put('/productos/actualizar-precios', { tasaDolar: Number(tasaDolar) });
+      setMensaje('Parámetro actualizado y precios BS recalculados');
     } catch (error) {
       setMensaje('Error al guardar');
     }
@@ -35,7 +37,6 @@ export default function Parametros() {
       <div className="page-title">
         <h1>⚙️ Parámetro del Dólar</h1>
       </div>
-
       <div className="card">
         <form onSubmit={guardar} style={{ maxWidth: '400px' }}>
           <div className="form-group">

@@ -10,6 +10,7 @@ import CambioPrecio from './pages/CambioPrecio';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import ReporteVentas from './pages/ReporteVentas';
+import ReporteCompras from './pages/ReporteCompras';
 
 function RutaProtegida({ children, soloAdmin = false }) {
   const token = localStorage.getItem('token');
@@ -18,7 +19,7 @@ function RutaProtegida({ children, soloAdmin = false }) {
     return <Navigate to="/login" replace />;
   }
   if (soloAdmin && usuario.rol !== 'ADMIN') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/ventas" replace />;
   }
   return children;
 }
@@ -30,17 +31,26 @@ function App() {
     <BrowserRouter>
       {window.location.pathname !== '/login' && (
         <nav className="navbar">
-          <Link to="/">Inicio</Link>
-          <Link to="/productos">Productos</Link>
-          <Link to="/proveedores">Proveedores</Link>
-          <Link to="/compras">Compras</Link>
-          <Link to="/ventas">Ventas</Link>
-          <Link to="/toma-inventario">Toma Inventario</Link>
-          <Link to="/cambio-precio">Cambio Precio</Link>
-          <Link to="/reportes">Reportes</Link>
-          <Link to="/reporte-ventas">Reporte Ventas</Link>
-          {usuario.rol === 'ADMIN' && <Link to="/parametros">Parámetros</Link>}
-          {usuario.rol === 'ADMIN' && <Link to="/registro">Usuarios</Link>}
+          {usuario.rol === 'ADMIN' ? (
+            <>
+              <Link to="/">Inicio</Link>
+              <Link to="/productos">Productos</Link>
+              <Link to="/proveedores">Proveedores</Link>
+              <Link to="/compras">Compras</Link>
+              <Link to="/ventas">Ventas</Link>
+              <Link to="/toma-inventario">Toma Inventario</Link>
+              <Link to="/cambio-precio">Cambio Precio</Link>
+              <Link to="/reportes">Reportes</Link>
+              <Link to="/reporte-ventas">Reporte Ventas</Link>
+              <Link to="/parametros">Parámetros</Link>
+              <Link to="/registro">Usuarios</Link>
+              <Link to="/reporte-compras">Reporte Compras</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/ventas">Ventas</Link>
+            </>
+          )}
           <button onClick={() => {
             localStorage.removeItem('token');
             localStorage.removeItem('usuario');
@@ -53,17 +63,18 @@ function App() {
       <div className="container">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<RutaProtegida><h1 className="page-title">Bienvenido al sistema Ojito</h1></RutaProtegida>} />
-          <Route path="/productos" element={<RutaProtegida><Productos /></RutaProtegida>} />
-          <Route path="/proveedores" element={<RutaProtegida><Proveedores /></RutaProtegida>} />
-          <Route path="/compras" element={<RutaProtegida><Compras /></RutaProtegida>} />
+          <Route path="/" element={<RutaProtegida><Ventas /></RutaProtegida>} />
+          <Route path="/productos" element={<RutaProtegida soloAdmin><Productos /></RutaProtegida>} />
+          <Route path="/proveedores" element={<RutaProtegida soloAdmin><Proveedores /></RutaProtegida>} />
+          <Route path="/compras" element={<RutaProtegida soloAdmin><Compras /></RutaProtegida>} />
           <Route path="/ventas" element={<RutaProtegida><Ventas /></RutaProtegida>} />
-          <Route path="/toma-inventario" element={<RutaProtegida><TomaInventario /></RutaProtegida>} />
-          <Route path="/cambio-precio" element={<RutaProtegida><CambioPrecio /></RutaProtegida>} />
-          <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
+          <Route path="/toma-inventario" element={<RutaProtegida soloAdmin><TomaInventario /></RutaProtegida>} />
+          <Route path="/cambio-precio" element={<RutaProtegida soloAdmin><CambioPrecio /></RutaProtegida>} />
+          <Route path="/reportes" element={<RutaProtegida soloAdmin><Reportes /></RutaProtegida>} />
+          <Route path="/reporte-ventas" element={<RutaProtegida soloAdmin><ReporteVentas /></RutaProtegida>} />
           <Route path="/parametros" element={<RutaProtegida soloAdmin><Parametros /></RutaProtegida>} />
           <Route path="/registro" element={<RutaProtegida soloAdmin><Registro /></RutaProtegida>} />
-          <Route path="/reporte-ventas" element={<ReporteVentas />} />
+          <Route path="/reporte-compras" element={<RutaProtegida soloAdmin><ReporteCompras /></RutaProtegida>} />
         </Routes>
       </div>
     </BrowserRouter>
