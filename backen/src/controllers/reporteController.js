@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Obtener reporte de inventario y ganancias por rango de fechas
 exports.getReporteInventario = async (req, res) => {
   const { fechaInicio, fechaFin } = req.query;
 
@@ -19,7 +18,6 @@ exports.getReporteInventario = async (req, res) => {
     });
 
     const reporte = await Promise.all(productos.map(async (producto) => {
-      // Compras en el rango
       const compras = await prisma.detalleCompra.aggregate({
         _sum: { cantidad: true },
         where: {
@@ -28,27 +26,19 @@ exports.getReporteInventario = async (req, res) => {
         }
       });
 
-      // Ventas contado en el rango
       const ventasContado = await prisma.detalleVenta.aggregate({
         _sum: { cantidad: true },
         where: {
           productoId: producto.id,
-          venta: {
-            fecha: { gte: inicio, lte: fin },
-            metodoPago: 'CONTADO'
-          }
+          venta: { fecha: { gte: inicio, lte: fin }, metodoPago: 'CONTADO' }
         }
       });
 
-      // Ventas fiado en el rango
       const ventasFiado = await prisma.detalleVenta.aggregate({
         _sum: { cantidad: true },
         where: {
           productoId: producto.id,
-          venta: {
-            fecha: { gte: inicio, lte: fin },
-            metodoPago: 'FIADO'
-          }
+          venta: { fecha: { gte: inicio, lte: fin }, metodoPago: 'FIADO' }
         }
       });
 
@@ -58,10 +48,8 @@ exports.getReporteInventario = async (req, res) => {
       const cantidadVentas = cantidadVentasContado + cantidadVentasFiado;
       const stockActual = Number(producto.stockActual);
 
-      // Inventario inicial = stock actual - compras + ventas totales
       const inventarioInicial = stockActual - cantidadCompras + cantidadVentas;
 
-      // Obtener la última toma de inventario (físico) para este producto
       const ultimoDetalle = await prisma.detalleConteo.findFirst({
         where: { productoId: producto.id },
         orderBy: { id: 'desc' },
@@ -69,12 +57,13 @@ exports.getReporteInventario = async (req, res) => {
 
       const inventarioFisico = ultimoDetalle ? Number(ultimoDetalle.cantidadContada) : 0;
       const diferencia = stockActual - inventarioFisico;
-      const perdida = diferencia > 0 ? diferencia : 0; // solo si falta mercancía
-
+      const perdida = diferencia > 0 ? diferencia : 0;
       const costoUnitario = Number(producto.costoLocal);
+      const perdidaBs = perdida * costoUnitario;
       const precioVenta = Number(producto.precioVenta);
       const gananciaUnitaria = precioVenta - costoUnitario;
       const gananciaTotal = gananciaUnitaria * cantidadVentas;
+      const totalVenta = precioVenta * cantidadVentas;
 
       return {
         productoId: producto.id,
@@ -84,15 +73,17 @@ exports.getReporteInventario = async (req, res) => {
         compras: cantidadCompras,
         ventasContado: cantidadVentasContado,
         ventasFiado: cantidadVentasFiado,
-        ventas: cantidadVentas, // total
+        ventas: cantidadVentas,
         inventarioFinal: stockActual,
         inventarioFisico,
         diferencia,
         perdida,
+        perdidaBs,
         costoUnitario,
         precioVenta,
         gananciaUnitaria,
-        gananciaTotal
+        gananciaTotal,
+        totalVenta
       };
     }));
 
