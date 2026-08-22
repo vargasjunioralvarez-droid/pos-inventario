@@ -55,57 +55,57 @@ export default function Reportes() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {datos.length > 0 && (
-        <div className="card">
-          <table className="table" style={{ width: '100%', fontSize: '10px', tableLayout: 'auto' }}>
+        <div className="card" style={{ overflowX: 'auto' }}>
+          <table className="table" style={{ width: '100%', fontSize: '11px', whiteSpace: 'nowrap' }}>
             <thead>
               <tr>
-                <th style={{ padding: '4px' }}>Código</th>
-                <th style={{ padding: '4px' }}>Producto</th>
-                <th style={{ padding: '4px' }}>Inv. Inicial</th>
-                <th style={{ padding: '4px' }}>Compras</th>
-                <th style={{ padding: '4px' }}>V. Contado</th>
-                <th style={{ padding: '4px' }}>V. Fiado</th>
-                <th style={{ padding: '4px' }}>V. Totales</th>
-                <th style={{ padding: '4px' }}>Inv. Final</th>
-                <th style={{ padding: '4px' }}>Inv. Físico</th>
-                <th style={{ padding: '4px' }}>Dif.</th>
-                <th style={{ padding: '4px' }}>Pérd. Unid.</th>
-                <th style={{ padding: '4px' }}>Costo Unit.</th>
-                <th style={{ padding: '4px' }}>Precio Venta</th>
-                <th style={{ padding: '4px' }}>% Ganan.</th>
-                <th style={{ padding: '4px' }}>Ganancia Total</th>
-                <th style={{ padding: '4px' }}>Total Venta</th>
-                <th style={{ padding: '4px' }}>Total Pérdida</th>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Inv. Inicial</th>
+                <th>Compras</th>
+                <th>V. Contado</th>
+                <th>V. Fiado</th>
+                <th>V. Totales</th>
+                <th>Inv. Final</th>
+                <th>Inv. Físico</th>
+                <th>Dif.</th>
+                <th>Pérd. Unid.</th>
+                <th>Costo Unit.</th>
+                <th>Precio Venta</th>
+                <th>% Ganan.</th>
+                <th>Ganancia Total</th>
+                <th>Total Venta</th>
+                <th>Total Pérdida</th>
               </tr>
             </thead>
             <tbody>
               {datos.map(item => (
                 <tr key={item.productoId}>
-                  <td style={{ padding: '4px' }}>{item.codigo}</td>
-                  <td style={{ padding: '4px' }}>{item.nombre}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.inventarioInicial).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.compras).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.ventasContado || 0).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.ventasFiado || 0).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.ventas || 0).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.inventarioFinal).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.inventarioFisico).toFixed(2)}</td>
-                  <td className={item.diferencia >= 0 ? 'text-warning' : 'text-success'} style={{ padding: '4px' }}>
+                  <td>{item.codigo}</td>
+                  <td>{item.nombre}</td>
+                  <td>{Number(item.inventarioInicial).toFixed(2)}</td>
+                  <td>{Number(item.compras).toFixed(2)}</td>
+                  <td>{Number(item.ventasContado || 0).toFixed(2)}</td>
+                  <td>{Number(item.ventasFiado || 0).toFixed(2)}</td>
+                  <td>{Number(item.ventas || 0).toFixed(2)}</td>
+                  <td>{Number(item.inventarioFinal).toFixed(2)}</td>
+                  <td>{Number(item.inventarioFisico).toFixed(2)}</td>
+                  <td className={item.diferencia >= 0 ? 'text-warning' : 'text-success'}>
                     {Number(item.diferencia).toFixed(2)}
                   </td>
-                  <td className="text-danger" style={{ padding: '4px' }}>{Number(item.perdida).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.costoUnitario).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>{Number(item.precioVenta).toFixed(2)}</td>
-                  <td style={{ padding: '4px' }}>
+                  <td className="text-danger">{Number(item.perdida).toFixed(2)}</td>
+                  <td>{Number(item.costoUnitario).toFixed(2)}</td>
+                  <td>{Number(item.precioVenta).toFixed(2)}</td>
+                  <td>
                     {Number(item.costoUnitario) > 0
                       ? (((Number(item.precioVenta) - Number(item.costoUnitario)) / Number(item.costoUnitario)) * 100).toFixed(2) + '%'
                       : '0%'}
                   </td>
-                  <td className={item.gananciaTotal >= 0 ? 'text-success' : 'text-danger'} style={{ padding: '4px' }}>
+                  <td className={item.gananciaTotal >= 0 ? 'text-success' : 'text-danger'}>
                     {Number(item.gananciaTotal).toFixed(2)}
                   </td>
-                  <td style={{ padding: '4px' }}>{Number(item.totalVenta).toFixed(2)}</td>
-                  <td className="text-danger" style={{ padding: '4px' }}>{Number(item.perdidaBs).toFixed(2)}</td>
+                  <td>{Number(item.totalVenta).toFixed(2)}</td>
+                  <td className="text-danger">{Number(item.perdidaBs).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
