@@ -42,6 +42,35 @@ export default function Ventas() {
     cargarDatos();
   }, []);
 
+  // Efecto para actualizar precios al cambiar tipo de pago
+  useEffect(() => {
+    if (detalles.length === 0) return;
+
+    setDetalles(prevDetalles =>
+      prevDetalles.map(d => {
+        const producto = productos.find(p => p.id === d.productoId);
+        if (!producto) return d;
+
+        let precioVenta;
+        if (tipoPago === 'FIADO') {
+          precioVenta = producto.moneda === 'USD'
+            ? Number(producto.precioVentaFiadoUsd) * tasaDolar
+            : Number(producto.precioVentaFiado);
+        } else {
+          precioVenta = producto.moneda === 'USD'
+            ? Number(producto.precioVentaUsd) * tasaDolar
+            : Number(producto.precioVenta);
+        }
+
+        return {
+          ...d,
+          precioVenta,
+          precioVentaUsd: precioVenta / tasaDolar
+        };
+      })
+    );
+  }, [tipoPago, tasaDolar, productos]);
+
   const buscarProductos = (termino) => {
     setTerminoBusqueda(termino);
     if (!termino.trim()) {
