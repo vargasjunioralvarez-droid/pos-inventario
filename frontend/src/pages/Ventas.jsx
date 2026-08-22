@@ -139,15 +139,16 @@ export default function Ventas() {
       return;
     }
     try {
-      await api.post('/ventas', {
-        cliente: `${clienteCedula} - ${clienteNombre}`,
-        metodoPago: tipoPago,
-        detalles: detalles.map(d => ({
-          productoId: d.productoId,
-          cantidad: d.cantidad,
-          precioVenta: d.precioVenta
-        }))
-      });
+    await api.post('/ventas', {
+  cliente: `${clienteCedula} - ${clienteNombre}`,
+  metodoPago: tipoPago,
+  tasaDolar,
+  detalles: detalles.map(d => ({
+    productoId: d.productoId,
+    cantidad: d.cantidad,
+    precioVenta: d.precioVenta
+  }))
+});
       setMensaje('✅ Venta registrada exitosamente');
       setDetalles([]);
       setClienteCedula('');

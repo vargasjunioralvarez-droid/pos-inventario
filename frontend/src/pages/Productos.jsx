@@ -8,7 +8,8 @@ export default function Productos() {
   const [form, setForm] = useState({
     codigo: '',
     descripcion: '',
-    unidadesPorBulto: ''
+    unidadesPorBulto: '',
+    moneda: 'USD'
   });
 
   const cargar = async () => {
@@ -35,7 +36,7 @@ export default function Productos() {
         alert('Producto creado');
       }
       setEditandoId(null);
-      setForm({ codigo: '', descripcion: '', unidadesPorBulto: '' });
+      setForm({ codigo: '', descripcion: '', unidadesPorBulto: '', moneda: 'USD' });
       cargar();
     } catch (error) {
       console.error('Error al guardar producto', error);
@@ -48,7 +49,8 @@ export default function Productos() {
     setForm({
       codigo: p.codigo,
       descripcion: p.descripcion || p.nombre,
-      unidadesPorBulto: p.unidadesPorBulto || ''
+      unidadesPorBulto: p.unidadesPorBulto || '',
+      moneda: p.moneda || 'USD'
     });
   };
 
@@ -66,7 +68,7 @@ export default function Productos() {
 
   const cancelarEdicion = () => {
     setEditandoId(null);
-    setForm({ codigo: '', descripcion: '', unidadesPorBulto: '' });
+    setForm({ codigo: '', descripcion: '', unidadesPorBulto: '', moneda: 'USD' });
   };
 
   const productosFiltrados = productos.filter(p =>
@@ -113,7 +115,7 @@ export default function Productos() {
           <thead>
             <tr>
               <th style={{ width: '20%' }}>Código</th>
-              <th style={{ width: '15%', textAlign: 'left', paddingLeft: '20px' }}>Descripción</th>
+              <th style={{ width: '45%', textAlign: 'left', paddingLeft: '20px' }}>Descripción</th>
               <th style={{ width: '15%', textAlign: 'center' }}>Unid. por Bulto</th>
               <th style={{ width: '20%', textAlign: 'right' }}>Acciones</th>
             </tr>

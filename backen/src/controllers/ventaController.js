@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 // Crear una venta con detalles y actualizar stock
 exports.crearVenta = async (req, res) => {
-  const { cliente, metodoPago, detalles, pagado } = req.body;
+  const { cliente, metodoPago, detalles, pagado, tasaDolar } = req.body;
 
   if (!detalles || !detalles.length) {
     return res.status(400).json({ error: 'Debe incluir al menos un detalle de venta' });
@@ -59,6 +59,7 @@ exports.crearVenta = async (req, res) => {
           metodoPago: metodoPago || 'EFECTIVO',
           total,
           pagado: pagado !== undefined ? pagado : (metodoPago === 'CONTADO'),
+          tasaDolar: tasaDolar || null,
           detalles: { create: detallesVenta }
         },
         include: { detalles: true }
@@ -87,7 +88,7 @@ exports.getVentas = async (req, res) => {
   }
 };
 
-// Obtener ventas filtradas por fecha, método y estado de pago
+// Obtener ventas filtradas por fecha, método y estado
 exports.getVentasPorMetodo = async (req, res) => {
   const { fechaInicio, fechaFin, metodoPago, pagado } = req.query;
   const filtro = {};
@@ -98,12 +99,8 @@ exports.getVentasPorMetodo = async (req, res) => {
       lte: new Date(fechaFin + 'T23:59:59')
     };
   }
-  if (metodoPago) {
-    filtro.metodoPago = metodoPago;
-  }
-  if (pagado !== undefined && pagado !== '') {
-    filtro.pagado = pagado === 'true';
-  }
+  if (metodoPago) filtro.metodoPago = metodoPago;
+  if (pagado !== undefined && pagado !== '') filtro.pagado = pagado === 'true';
 
   try {
     const ventas = await prisma.venta.findMany({
@@ -118,7 +115,7 @@ exports.getVentasPorMetodo = async (req, res) => {
   }
 };
 
-// Actualizar estado de pago de una venta
+// Actualizar estado de pago
 exports.updatePagoVenta = async (req, res) => {
   const { id } = req.params;
   const { pagado } = req.body;

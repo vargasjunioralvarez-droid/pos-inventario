@@ -7,16 +7,13 @@ export default function ReporteVentas() {
   const [metodoPago, setMetodoPago] = useState('');
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [ventas, setVentas] = useState([]);
-  const [tasaDolar, setTasaDolar] = useState(0);
 
   const consultar = async () => {
     try {
-      const [resVentas, resParam] = await Promise.all([
-        api.get('/ventas/reporte', { params: { fechaInicio, fechaFin, metodoPago } }),
-        api.get('/parametros')
-      ]);
-      setVentas(resVentas.data);
-      if (resParam.data) setTasaDolar(Number(resParam.data.tasaDolar));
+      const res = await api.get('/ventas/reporte', {
+        params: { fechaInicio, fechaFin, metodoPago }
+      });
+      setVentas(res.data);
     } catch (error) {
       console.error('Error al consultar reporte', error);
     }
@@ -31,7 +28,6 @@ export default function ReporteVentas() {
   );
 
   const totalBs = ventasFiltradas.reduce((s, v) => s + Number(v.total), 0);
-  const totalUsd = tasaDolar > 0 ? totalBs / tasaDolar : 0;
 
   const marcarPagado = async (id, pagado) => {
     try {
@@ -40,11 +36,6 @@ export default function ReporteVentas() {
     } catch (error) {
       console.error('Error al actualizar pago', error);
     }
-  };
-
-  const estadoTexto = (v) => {
-    if (v.metodoPago === 'CONTADO') return 'Pagado';
-    return v.pagado ? 'Pagado' : 'Pendiente';
   };
 
   return (
@@ -78,7 +69,6 @@ export default function ReporteVentas() {
       <div className="card">
         <h2>Resumen</h2>
         <div><strong>Total BS:</strong> {totalBs.toFixed(2)}</div>
-        <div><strong>Total USD:</strong> ${totalUsd.toFixed(2)}</div>
       </div>
 
       <div className="card">
@@ -96,33 +86,32 @@ export default function ReporteVentas() {
             </tr>
           </thead>
           <tbody>
-            {ventasFiltradas.map(v => (
-              <tr key={v.id}>
-                <td>{v.id}</td>
-                <td>{new Date(v.fecha).toLocaleString()}</td>
-                <td>{v.cliente || '-'}</td>
-                <td>{v.metodoPago}</td>
-                <td>{Number(v.total).toFixed(2)}</td>
-                <td>${(Number(v.total) / tasaDolar).toFixed(2)}</td>
-                <td>{estadoTexto(v)}</td>
-                <td>
-                  {v.metodoPago === 'FIADO' ? (
-                    <button
-                      className="btn"
-                      style={{
-                        background: v.pagado ? '#10b981' : '#f59e0b',
-                        color: 'white'
-                      }}
-                      onClick={() => marcarPagado(v.id, !v.pagado)}
-                    >
-                      {v.pagado ? 'Pagado' : 'Marcar Pagado'}
-                    </button>
-                  ) : (
-                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>Pagado</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {ventasFiltradas.map(v => {
+              const tasaVenta = Number(v.tasaDolar) || 0;
+              const totalUsd = tasaVenta > 0 ? Number(v.total) / tasaVenta : 0;
+              return (
+                <tr key={v.id}>
+                  <td>{v.id}</td>
+                  <td>{new Date(v.fecha).toLocaleString()}</td>
+                  <td>{v.cliente || '-'}</td>
+                  <td>{v.metodoPago}</td>
+                  <td>{Number(v.total).toFixed(2)}</td>
+                  <td>{tasaVenta > 0 ? `$${totalUsd.toFixed(2)}` : '-'}</td>
+                  <td>{v.pagado ? 'Pagado' : 'Pendiente'}</td>
+                  <td>
+                    {v.metodoPago === 'FIADO' && (
+                      <button
+                        className="btn"
+                        style={{ background: v.pagado ? '#10b981' : '#f59e0b', color: 'white' }}
+                        onClick={() => marcarPagado(v.id, !v.pagado)}
+                      >
+                        {v.pagado ? 'Pagado' : 'Marcar Pagado'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {ventasFiltradas.length === 0 && (
               <tr><td colSpan="8">No hay ventas para el filtro</td></tr>
             )}
