@@ -62,7 +62,6 @@ export default function Ventas() {
         d.productoId === producto.id ? { ...d, cantidad: d.cantidad + 1 } : d
       ));
     } else {
-      // Seleccionar precio según tipo de pago
       let precioVenta;
       if (tipoPago === 'FIADO') {
         precioVenta = producto.moneda === 'USD'
@@ -78,6 +77,7 @@ export default function Ventas() {
         productoId: producto.id,
         codigo: producto.codigo,
         descripcion: producto.nombre || producto.descripcion,
+        stockActual: Number(producto.stockActual),
         cantidad: 1,
         precioVenta,
         precioVentaUsd: precioVenta / tasaDolar
@@ -164,12 +164,7 @@ export default function Ventas() {
               if (clientes[cedula]) setClienteNombre(clientes[cedula]);
               else setClienteNombre('');
             }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('nombreCliente').focus();
-              }
-            }}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('nombreCliente').focus(); } }}
             style={{ flex: 1, minWidth: '120px', padding: '10px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
           />
           <input
@@ -178,12 +173,7 @@ export default function Ventas() {
             placeholder="Nombre del cliente"
             value={clienteNombre}
             onChange={e => setClienteNombre(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('buscadorProducto').focus();
-              }
-            }}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('buscadorProducto').focus(); } }}
             style={{ flex: 2, minWidth: '200px', padding: '10px', border: '1px solid #e5e7eb', borderRadius: '6px' }}
           />
           <select
@@ -225,7 +215,7 @@ export default function Ventas() {
                 onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                <span>{p.codigo} - {p.nombre || p.descripcion}</span>
+                <span>{p.codigo} - {p.nombre || p.descripcion} (Stock: {Number(p.stockActual).toFixed(2)})</span>
                 <span style={{ fontWeight: 'bold' }}>
                   {tipoPago === 'FIADO'
                     ? (p.moneda === 'USD' ? `$${Number(p.precioVentaFiadoUsd).toFixed(2)}` : `Bs ${Number(p.precioVentaFiado).toFixed(2)}`)
@@ -244,6 +234,7 @@ export default function Ventas() {
             <tr>
               <th>Código</th>
               <th>Descripción</th>
+              <th>Stock Disp.</th>
               <th>Cantidad</th>
               <th>Precio Bs</th>
               <th>Subtotal</th>
@@ -255,18 +246,14 @@ export default function Ventas() {
               <tr key={d.productoId}>
                 <td>{d.codigo}</td>
                 <td>{d.descripcion}</td>
+                <td>{d.stockActual}</td>
                 <td>
                   <input
                     type="number"
                     min="1"
                     value={d.cantidad}
                     onChange={e => cambiarCantidad(d.productoId, e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('btnRegistrarVenta').focus();
-                      }
-                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnRegistrarVenta').focus(); } }}
                     style={{ width: '70px', padding: '5px' }}
                   />
                 </td>
