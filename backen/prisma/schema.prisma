@@ -86,6 +86,7 @@ model Venta {
   metodoPago   String?
   pagado       Boolean  @default(false)
   detalles     DetalleVenta[]
+  tasaDolar Decimal? @db.Decimal(12, 2)
 }
 
 model DetalleVenta {

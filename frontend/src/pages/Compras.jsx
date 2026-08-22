@@ -51,7 +51,6 @@ export default function Compras() {
           }
         }
 
-        // Si cambia costo en BS, calcular USD
         if (field === 'costoBultoBs') {
           const bs = Number(value);
           if (!isNaN(bs) && tasaDolar > 0) {
@@ -61,7 +60,6 @@ export default function Compras() {
           }
         }
 
-        // Si cambia costo en USD, calcular BS
         if (field === 'costoBultoUsd') {
           const usd = Number(value);
           if (!isNaN(usd) && tasaDolar > 0) {
@@ -125,13 +123,13 @@ export default function Compras() {
       tasaDolar: Number(tasaDolar),
       tipoPago,
       detalles: detalles.map(d => {
-        const totalUnidades = Number(d.cantidadBultos) * Number(d.unidadesPorBulto);
+        const unidadesPorBulto = Number(d.unidadesPorBulto);
         const costoBultoBs = Number(d.costoBultoBs) || 0;
-        const costoUnitarioBs = costoBultoBs / totalUnidades;
+        const costoUnitarioBs = unidadesPorBulto > 0 ? costoBultoBs / unidadesPorBulto : 0;
         return {
           productoId: Number(d.productoId),
           cantidadBultos: Number(d.cantidadBultos),
-          unidadesPorBulto: Number(d.unidadesPorBulto),
+          unidadesPorBulto,
           costoUnitario: costoUnitarioBs,
           moneda: 'BS'
         };
@@ -167,8 +165,8 @@ export default function Compras() {
       productoId: d.productoId,
       cantidadBultos: d.cantidadBultos || 1,
       unidadesPorBulto: d.unidadesPorBulto || 1,
-      costoBultoBs: Number(d.costoLocal) * Number(d.cantidad),
-      costoBultoUsd: (Number(d.costoLocal) * Number(d.cantidad)) / (Number(compra.tasaDolar) || 1)
+      costoBultoBs: Number(d.costoLocal) * Number(d.unidadesPorBulto || 1),
+      costoBultoUsd: (Number(d.costoLocal) * Number(d.unidadesPorBulto || 1)) / (Number(compra.tasaDolar) || 1)
     }));
     setDetalles(detallesCargados.length > 0 ? detallesCargados : [{ id: 1, productoId: '', cantidadBultos: '', unidadesPorBulto: '', costoBultoBs: '', costoBultoUsd: '' }]);
   };
@@ -246,11 +244,13 @@ export default function Compras() {
               </thead>
               <tbody>
                 {detalles.map(d => {
-                  const totalUnidades = (Number(d.cantidadBultos) || 0) * (Number(d.unidadesPorBulto) || 0);
+                  const cantidadBultos = Number(d.cantidadBultos) || 0;
+                  const unidadesPorBulto = Number(d.unidadesPorBulto) || 0;
+                  const totalUnidades = cantidadBultos * unidadesPorBulto;
                   const costoBultoBs = Number(d.costoBultoBs) || 0;
                   const costoBultoUsd = Number(d.costoBultoUsd) || 0;
-                  const costoUnitarioBs = totalUnidades > 0 ? costoBultoBs / totalUnidades : 0;
-                  const costoUnitarioUsd = totalUnidades > 0 ? costoBultoUsd / totalUnidades : 0;
+                  const costoUnitarioBs = unidadesPorBulto > 0 ? costoBultoBs / unidadesPorBulto : 0;
+                  const costoUnitarioUsd = unidadesPorBulto > 0 ? costoBultoUsd / unidadesPorBulto : 0;
                   return (
                     <tr key={d.id}>
                       <td>
@@ -301,7 +301,78 @@ export default function Compras() {
         </form>
       </div>
 
-      {/* Historial y modal similares al anterior */}
+      <div className="card">
+        <h2>Historial de Compras</h2>
+        <input type="text" placeholder="🔍 Buscar por proveedor o factura..." value={terminoBusqueda} onChange={e => setTerminoBusqueda(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Proveedor</th>
+              <th>Fecha</th>
+              <th>Factura</th>
+              <th>Tipo Pago</th>
+              <th>Total BS</th>
+              <th>Total USD</th>
+              {usuario.rol === 'ADMIN' && <th>Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {comprasPaginadas.map(c => (
+              <tr key={c.id} onClick={() => setModalDetalles(c)} style={{ cursor: 'pointer' }}>
+                <td>{c.id}</td>
+                <td>{c.proveedor?.nombre || 'N/A'}</td>
+                <td>{new Date(c.fecha).toLocaleString()}</td>
+                <td>{c.numeroFactura || '-'}</td>
+                <td>{c.tipoPago || 'CONTADO'}</td>
+                <td>{Number(c.total).toFixed(2)}</td>
+                <td>{c.totalUsd ? Number(c.totalUsd).toFixed(2) : '-'}</td>
+                {usuario.rol === 'ADMIN' && (
+                  <td onClick={e => e.stopPropagation()}>
+                    <button className="btn btn-warning" onClick={() => editarCompra(c)} style={{ marginRight: '5px' }}>Editar</button>
+                    <button className="btn btn-danger" onClick={() => eliminarCompra(c.id)}>Eliminar</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
+          <button className="btn btn-secondary" onClick={() => setPaginaActual(p => Math.max(1, p - 1))} disabled={paginaActual === 1}>Anterior</button>
+          <span>Página {paginaActual} de {totalPaginas}</span>
+          <button className="btn btn-secondary" onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas}>Siguiente</button>
+          <select value={porPagina} onChange={e => { setPorPagina(Number(e.target.value)); setPaginaActual(1); }}>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+      </div>
+
+      {modalDetalles && (
+        <div className="modal-overlay" onClick={() => setModalDetalles(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h3>Detalles de Compra #{modalDetalles.id}</h3>
+            <table className="table">
+              <thead><tr><th>Producto</th><th>Cant. Bultos</th><th>Unid. por Bulto</th><th>Total Unid.</th><th>Costo Unit. BS</th><th>Subtotal BS</th></tr></thead>
+              <tbody>
+                {modalDetalles.detalles.map(d => (
+                  <tr key={d.id}>
+                    <td>{d.producto?.nombre}</td>
+                    <td>{Number(d.cantidadBultos || 1).toFixed(2)}</td>
+                    <td>{Number(d.unidadesPorBulto || 1).toFixed(2)}</td>
+                    <td>{Number(d.cantidad).toFixed(2)}</td>
+                    <td>{Number(d.costoLocal).toFixed(2)}</td>
+                    <td>{(Number(d.cantidad) * Number(d.costoLocal)).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button className="btn btn-secondary" onClick={() => setModalDetalles(null)}>Cerrar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
