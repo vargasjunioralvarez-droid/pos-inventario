@@ -150,11 +150,12 @@ export default function Ventas() {
   }))
 });
       setMensaje('✅ Venta registrada exitosamente');
-      setDetalles([]);
-      setClienteCedula('');
-      setClienteNombre('');
-      setTipoPago('CONTADO');
-      setTimeout(() => setMensaje(''), 3000);
+setDetalles([]);
+setClienteCedula('');
+setClienteNombre('');
+setTipoPago('CONTADO');
+cargarDatos(); // recargar productos y stock
+setTimeout(() => setMensaje(''), 3000);
     } catch (error) {
       console.error('Error al registrar venta', error);
       alert(error.response?.data?.error || 'Error al registrar venta');
